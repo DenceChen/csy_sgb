@@ -1,0 +1,113 @@
+周宁分机号 631778
+wj王剑 
+海外回复邮件正文解析，我们还在分析，确定影响面和需要BI解析关键字
+提高外呼酒店或供应商准确性、接通率和有效性可以着手做了
+2017年全年外呼量4992万，接通率74%，有效率71%，无效话量1442万
+如果减少30%无效话量，至少可以节约400万成本。
+
+需要知道
+1、预订部用什么电话号码，
+2、什么时间打
+3、打哪一个电话，
+4、最终是否接通，最终电话是否有效的数据，
+5、下数据源落在哪张表
+
+cdd曹丹丹 
+预订部用什么电话号码，什么时间打，打哪一个电话，最终是否接通，最终电话是否有效的数据
+标黄的数据我这里没有，其他的可以提供 
+
+[‎2018/‎3/‎26 14:28] cdd曹丹丹: 涉及到的表
+ods_htl_htlorderprocessdb.htl_orderprocess_ccdesk_outcall 
+olap_htlmaindb.o_htl_007 
+
+use ods_htl_htlorderprocessdb;
+select * from htl_orderprocess_ccdesk_outcall where d=2018-03-26 limit 10;
+
+use olap_htlmaindb.;
+select * from o_htl_007 limit 10;
+
+5780都能看的吧？
+我账号给你，你可以去看  账号：zhou_n   密码：Zn385283  
+
+OLAP_CallCenterDB.O_Call_013记录公司所有呼出呼入的电话号码，
+取数据的时候orderid<>-1 calltype="O"
+每日大概数据量是48579
+
+最终获取的数据8369255
+
+[‎2018/‎4/‎11 10:51] wl吴磊(数据智能部): 
+dim_hoteldb.vdimhotel                 酒店维度表 
+dw_htlmaindb.currentfacthtlordersnap  订单维度表 
+
+ select *
+  from dw_htlmaindb.currentfacthtlordersnap
+  where istestaccount = 0 and orderstatus <> 'C'
+  and to_date(arrival) >= '${zdt.format("yyyy-MM-dd")}' 
+orderdate
+
+orderstatus= 'S'表示成交订单
+'${zdt.format("yyyy-MM-dd")}' 当天时间
+订单处理状态U：未提交；P：处理中；S：成交；C：取消;W:已提交未处理;M:修改单 
+
+[‎2018/‎4/‎11 10:54] wl吴磊(数据智能部): 
+'${zdt.addDay(0).format("yyyy-MM-dd")}'  
+
+唐云翔
+olap_htlmaindb.o_htl_007  你们可以直接看订单主表里confirmdate2
+
+olap_htlmaindb.o_htl_025  OperateTime14 酒店回复时间
+Olap_HtlMaindb.O_Htl_007 订单主表，17你以后所有订单数据都在里面。
+再往前的历史订单用DW_HtlDB.FactHtlOrderSnap这张表，这张表是全全量，非常大，慎用。
+海外订单的大体逻辑是订单主表关联Dim_PubDB.dimcity，关联主键cityid，country<>1的就是海外订单。
+酒店数据Dim_HtlDB.DimHotel与订单主表关联，关联主键hotel，此hotel代表的是子酒店id
+
+订单紧急程度 = 订单入住时间-订单提交时间
+
+
+Dim_HtlDB.DimHotel替换成dim_hoteldb.dimhotel 母酒店id使用这个字段actualmasterhotelid
+
+
+olap_htlmaindb.o_htl_019 calltype=='O' 可以知道是否存在催单
+
+
+olap_htlmaindb.o_htl_025  OperateTime14 酒店回复时间 替换下面的表 
+ods_htl_orderdb.ord_operatetime 
+upper(trim(operatetype))='P'    订单操作日志中收到供应商确认
+
+
+freesale 就是和保留房一样能立即确认的订单
+select from_unixtime(unix_timestamp("2016-01-18 01:02:27.467"),'yyyy-MM-dd HH:mm:ss')
+
+你拿的确认时间有问题
+我们要的是确认客户的时间
+你用的是收到酒店确认的时间
+
+Dim_HtlDB.DimhtlHotel  存在电话号码与子酒店的对应关系
+
+李鹏飞的账号，可以查看5780，也可以查看1424
+lipf
+lpf/963.
+
+
+
+不关联hotel的时候电话号码的数量：4725922
+关联电话号码的时候：
+
+
+
+恩恩，好的，我再看看通信那边给的外呼数据，看看是不是好匹配一些
+callID : 通话ID
+des_number: 外呼被叫号码
+failreason：外呼失败原因
+datatime: 呼叫时间
+sample如下：
+callID：415226496973732a349504
+des_number: 34064880
+failreason：关机 
+datatime: 2018-04-02 12:00:00
+callID：415226496973732a349505
+des_number: 34064888
+failreason：忙
+datatime: 2018-04-02 12:00:01 
+
+#99xxx 表示影藏电话
